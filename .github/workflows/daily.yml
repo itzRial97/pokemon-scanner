@@ -1,0 +1,34 @@
+name: Pokemon Scanner
+
+on:
+  schedule:
+    - cron: "0 6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - run: pip install requests
+
+      - name: Scanner ausführen
+        run: python pokemon_scanner.py
+        env:
+          POKEMON_TCG_API_KEY: ${{ secrets.POKEMON_TCG_API_KEY }}
+
+      - name: Preis-Historie und Reports speichern
+        run: |
+          git config user.name "scanner-bot"
+          git config user.email "bot@users.noreply.github.com"
+          git add pokemon_preise.db report_*.csv report_*.html index.html || true
+          git commit -m "Tagesreport $(date +%F)" || echo "Nichts zu speichern"
+          git push
